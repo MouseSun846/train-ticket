@@ -42,10 +42,10 @@ jobs:
       - name: Build and push slim image linux/arm64
         uses: docker/build-push-action@v6
         with:
-          context: ./deploy-job
+          context: .
           push: true
           tags: lmshg/train-ticket-deploy:${{ env.RELEASE_TAG }}
-          file: Dockerfile
+          file: deploy-job/Dockerfile
           build-args: |
             LIGHTEN=1
           platforms: linux/arm64
