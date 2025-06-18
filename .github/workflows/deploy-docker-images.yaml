@@ -34,25 +34,15 @@ jobs:
         with:
           username: lmshg
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-      - uses: docker/setup-buildx-action@v3
-        with:
-          install: true
-      - name: Cache Docker layers
-        uses: actions/cache@v4
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      # https://github.com/marketplace/actions/build-and-push-docker-images
+      - name: Build and push slim image linux/arm64
+        uses: docker/build-push-action@v6
         with:
-          platforms: arm64
-
-      - run: |
-          make package \
-            publish-image \
-            Repo=${{ secrets.DOCKER_HUB_USERNAME }} \
-            Tag=${GITHUB_REF#refs/tags/v} \
-            BUILDX_PLATFORMS="linux/amd64,linux/arm64"    
+          context: ./deploy-job
+          push: true
+          tags: lmshg/train-ticket-deploy:${{ env.RELEASE_TAG }}
+          file: Dockerfile
+          build-args: |
+            LIGHTEN=1
+          platforms: linux/arm64
