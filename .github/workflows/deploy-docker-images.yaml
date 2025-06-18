@@ -31,21 +31,30 @@ jobs:
       - name: Prepare release body
         run: |
           RELEASE_DATETIME=$(date -u +"%Y%m%dT%H%M%S")
-          echo "RELEASE_TAG=$RELEASE_DATETIME" >> $GITHUB_ENV
+          echo "RELEASE_TAG=$RELEASE_DATETIME" >> $GITHUB_ENV            
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: lmshg
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-
-      # https://github.com/marketplace/actions/build-and-push-docker-images
-      - name: Build and push slim image linux/arm64
-        uses: docker/build-push-action@v6
+      - uses: docker/setup-buildx-action@v1
         with:
-          context: ./deploy-job
-          push: true
-          tags: lmshg/train-ticket-deploy:${{ env.RELEASE_TAG }}
-          file: deploy-job/Dockerfile
-          build-args: |
-            LIGHTEN=1
-          platforms: linux/arm64
+          install: true
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+        with:
+          platforms: arm64
+
+      - run: |
+          make package \
+            publish-image \
+            Repo=${{ secrets.DOCKER_HUB_USERNAME }} \
+            Tag=${{ env.RELEASE_TAG }}\
+            BUILDX_PLATFORMS="linux/arm64"
